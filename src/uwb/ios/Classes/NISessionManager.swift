@@ -68,27 +68,34 @@ class NISessionManager: NSObject, NISessionDelegate {
     
     // MARK: - Accessory messages handling
     public func startSessionWithAccessory(configData: Data, peer: Peer) {
-        do {
-            let configuration = try NINearbyAccessoryConfiguration(data: configData)
-            
-            // TODO: Check if this works with multiple devices
-            // this works only with on peer
-            if #available(iOS 16.0, *) {
-                //configuration.isCameraAssistanceEnabled = true
+        if #available(iOS 15.0, *) {
+            do {
+                let configuration = try NINearbyAccessoryConfiguration(data: configData)
+
+                // TODO: Check if this works with multiple devices
+                // this works only with on peer
+                if #available(iOS 16.0, *) {
+                    //configuration.isCameraAssistanceEnabled = true
+                }
+
+                logger.log("Accessory Session with \(peer.id) configured and stared.")
+                logger.log("Accessory Token: \(configuration.accessoryDiscoveryToken)")
+                sessions[peer.id]!.peerDiscoveryToken = configuration.accessoryDiscoveryToken
+                sessions[peer.id]!.session.run(configuration)
+                logger.log("Run Session with \(peer.id).")
+
+                if let handler = uwbSessionStarted {
+                    handler(peer.id)
+                }
             }
-            
-            logger.log("Accessory Session with \(peer.id) configured and stared.")
-            logger.log("Accessory Token: \(configuration.accessoryDiscoveryToken)")
-            sessions[peer.id]!.peerDiscoveryToken = configuration.accessoryDiscoveryToken
-            sessions[peer.id]!.session.run(configuration)
-            logger.log("Run Session with \(peer.id).")
-            
-            if let handler = uwbSessionStarted {
-                handler(peer.id)
+            catch {
+                logger.error("Accessory Configuration failed. Invalid Conig data.")
+                return
             }
-        }
-        catch {
-            logger.error("Accessory Configuration failed. Invalid Conig data.")
+        } else {
+            // NINearbyAccessoryConfiguration is only available on iOS 15+. On older OS versions
+            // we can't configure accessory-based NearbyInteraction sessions. Log and return.
+            logger.error("NINearbyAccessoryConfiguration requires iOS 15.0+. Accessory sessions are not supported on this OS.")
             return
         }
     }

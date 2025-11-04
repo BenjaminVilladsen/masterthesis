@@ -20,9 +20,7 @@ class UwbListItem extends StatelessWidget {
     }
 
     var data = device.uwbData!;
-    if (data.direction?.x != null &&
-        data.direction?.y != null &&
-        data.direction?.z != null) {
+    if (data.direction?.x != null && data.direction?.y != null && data.direction?.z != null) {
       var x = data.direction?.x.toStringAsFixed(1);
       var y = data.direction?.y.toStringAsFixed(1);
       var z = data.direction?.z.toStringAsFixed(1);
@@ -113,59 +111,52 @@ class UwbListItem extends StatelessWidget {
             ),
             subtitle: Container(
               padding: const EdgeInsets.only(top: 10),
-              child: Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Wrap(
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        const Icon(Icons.assistant_navigation),
-                        const SizedBox(width: 10),
-                        Text(
-                          getDirection(device),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 5),
-                    Wrap(
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Transform.rotate(
-                          angle: getAngle(device),
-                          child: const Icon(Icons.assistant_navigation),
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          getFiraData(device),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 5),
-                    Wrap(
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        const Icon(Icons.text_rotation_angledown),
-                        const SizedBox(width: 10),
-                        Text(
-                          getHorizontalAngle(device),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      const Icon(Icons.assistant_navigation),
+                      const SizedBox(width: 10),
+                      Text(
+                        getDirection(device),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 5),
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Transform.rotate(
+                        angle: getAngle(device),
+                        child: const Icon(Icons.assistant_navigation),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        getFiraData(device),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 5),
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      const Icon(Icons.text_rotation_angledown),
+                      const SizedBox(width: 10),
+                      Text(
+                        getHorizontalAngle(device),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-            trailing: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  getDistance(device),
-                  style: const TextStyle(
-                    fontSize: 16,
-                  ),
-                ),
-              ],
+            trailing: Text(
+              getDistance(device),
+              style: const TextStyle(
+                fontSize: 16,
+              ),
             ),
           ),
           Row(

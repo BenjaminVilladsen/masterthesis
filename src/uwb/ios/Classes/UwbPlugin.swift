@@ -14,6 +14,7 @@ public class UwbPlugin: NSObject, FlutterPlugin, UwbHostApi, NISessionDelegate {
     
     // Event Channels Data Handler
     static var uwbDataHandler: UwbDataHandler? = nil
+    static var debugLogHandler: FlutterEventSink? = nil
     
     private var appName: String? = nil
     private var serviceId: String? = nil
@@ -49,14 +50,18 @@ public class UwbPlugin: NSObject, FlutterPlugin, UwbHostApi, NISessionDelegate {
         self.niManager.accessorySharedConfig = accessorySharedConfig
         
         self.appName = Bundle.main.infoDictionary?[kCFBundleNameKey as String] as? String
-        self.serviceId = convertToValidServiceId(serviceId: appName!)
-        self.identityId = "app.\(appName!)"
+    self.serviceId = "uwb-app-test-id"
+    // Use a fixed identity to ensure MultipeerDiscoveryInfo matches across builds
+    self.identityId = "uwb-identity" 
     }
     
     private func initMpcSession(deviceName: String, serviceId: String, identityId: String) {
+        let validService = convertToValidServiceId(serviceId: serviceId)
+        logger.log("Initializing MPC Session with service: \(validService), identity: \(identityId), peer: \(deviceName)")
+        sendDebugLog("[MPC] Initializing MPC with service: \(validService) identity: \(identityId) peer: \(deviceName)")
         self.mpcManager = MultipeerConnectivityManager(
             localPeerId: deviceName,
-            service: serviceId,
+            service: validService,
             identity: identityId
         )
         self.mpcManager?.peerConnectedHandler = mpcPeerConnected
@@ -65,8 +70,14 @@ public class UwbPlugin: NSObject, FlutterPlugin, UwbHostApi, NISessionDelegate {
         self.mpcManager?.peerFoundHandler = mpcPeerFound
         self.mpcManager?.peerLostHandler = mpcPeerLost
         self.mpcManager?.peerInvitedHandler = mpcPeerInvited
+        self.mpcManager?.debugLogHandler = sendDebugLog
     }
      
+    private func sendDebugLog(_ message: String) {
+        DispatchQueue.main.async {
+            UwbPlugin.debugLogHandler?(message)
+        }
+    }
 
     // Send peer instead of uwb Device
     func accessoryFound(peer: Peer) {
@@ -476,14 +487,57 @@ public class UwbPlugin: NSObject, FlutterPlugin, UwbHostApi, NISessionDelegate {
     
     public static func register(with registrar: FlutterPluginRegistrar) {
         let messenger : FlutterBinaryMessenger = registrar.messenger()
-        let api : UwbHostApi & NSObjectProtocol = UwbPlugin.init()
-        UwbHostApiSetup.setUp(binaryMessenger: messenger, api: api)
+    // Create plugin instance and expose it both as the Pigeon host API and as a
+    // FlutterPlugin (for method channel delegate registration).
+    let plugin = UwbPlugin.init()
+    let api: UwbHostApi & NSObjectProtocol = plugin
+    UwbHostApiSetup.setUp(binaryMessenger: messenger, api: api)
         
         // Initialize all event channels
         let uwbDataChannel = FlutterEventChannel(name: "uwb_plugin/uwbData", binaryMessenger: messenger)
         uwbDataHandler = UwbDataHandler()
         uwbDataChannel.setStreamHandler(uwbDataHandler)
         
+        let debugLogChannel = FlutterEventChannel(name: "uwb_plugin/debug_logs", binaryMessenger: messenger)
+        let debugStreamHandler = DebugLogStreamHandler()
+        debugLogChannel.setStreamHandler(debugStreamHandler)
+        
+        // Diagnostics method channel: allow Flutter to request native health dumps
+        let diagChannel = FlutterMethodChannel(name: "uwb_plugin/diagnostics", binaryMessenger: messenger)
+        // registrar expects a FlutterPlugin; pass the plugin instance we created above.
+        registrar.addMethodCallDelegate(plugin, channel: diagChannel)
+        
         flutterApi = UwbFlutterApi(binaryMessenger: messenger)
+    }
+}
+
+// Handle diagnostics method calls
+extension UwbPlugin {
+    public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        if call.method == "dumpMpcHealth" {
+            if let dump = self.mpcManager?.healthDump() {
+                // Send via debug log stream so Flutter UI can display and copy it
+                sendDebugLog("[MPC] Health Dump: \(dump)")
+                result(nil)
+                return
+            } else {
+                sendDebugLog("[MPC] Health Dump: mpcManager not initialized")
+                result(nil)
+                return
+            }
+        }
+        result(FlutterMethodNotImplemented)
+    }
+}
+
+class DebugLogStreamHandler: NSObject, FlutterStreamHandler {
+    public func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
+        UwbPlugin.debugLogHandler = events
+        return nil
+    }
+
+    public func onCancel(withArguments arguments: Any?) -> FlutterError? {
+        UwbPlugin.debugLogHandler = nil
+        return nil
     }
 }
