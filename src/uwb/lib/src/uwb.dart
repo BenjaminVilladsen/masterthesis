@@ -10,18 +10,14 @@ class Uwb extends UwbPlatform {
   /// Returns a list of all discovered devices
   /// This list is updated whenever a new device is discovered, lost, connected
   /// or disconnected.
-  Stream<Iterable<UwbDevice>> get discoveredDevicesStream =>
-      _discoveredDevicesStream.stream.asBroadcastStream();
+  Stream<Iterable<UwbDevice>> get discoveredDevicesStream => _discoveredDevicesStream.stream.asBroadcastStream();
 
   /// Notifies about the current state of the discovery process
-  Stream<DiscoveryDeviceState> get discoveryStateStream =>
-      _discoveryStateStream.stream.asBroadcastStream();
+  Stream<DiscoveryDeviceState> get discoveryStateStream => _discoveryStateStream.stream.asBroadcastStream();
 
-  Stream<Iterable<UwbDevice>> get rangingDevicesStream =>
-      _rangingDevicesStream.stream.asBroadcastStream();
+  Stream<Iterable<UwbDevice>> get rangingDevicesStream => _rangingDevicesStream.stream.asBroadcastStream();
 
-  Stream<UwbSessionState> get uwbSessionStateStream =>
-      _uwbSessionStateStream.stream.asBroadcastStream();
+  Stream<UwbSessionState> get uwbSessionStateStream => _uwbSessionStateStream.stream.asBroadcastStream();
 
   /// Returns a list of all current ranging devices
   Stream<Iterable<UwbDevice>> get uwbDataStream {
@@ -34,14 +30,11 @@ class Uwb extends UwbPlatform {
     ).asBroadcastStream();
   }
 
-  final _discoveryStateStream =
-      StreamController<DiscoveryDeviceState>.broadcast();
-  final _discoveredDevicesStream =
-      StreamController<Iterable<UwbDevice>>.broadcast();
+  final _discoveryStateStream = StreamController<DiscoveryDeviceState>.broadcast();
+  final _discoveredDevicesStream = StreamController<Iterable<UwbDevice>>.broadcast();
 
   final _uwbSessionStateStream = StreamController<UwbSessionState>.broadcast();
-  final _rangingDevicesStream =
-      StreamController<Iterable<UwbDevice>>.broadcast();
+  final _rangingDevicesStream = StreamController<Iterable<UwbDevice>>.broadcast();
 
   final _rangingDevices = <String, UwbDevice>{};
   final _discoveredDevices = <String, UwbDevice>{};
@@ -59,8 +52,7 @@ class Uwb extends UwbPlatform {
       onDiscoveryDeviceConnected: _onDiscoveryDeviceConnected,
       onDiscoveryDeviceDisconnected: _onDiscoveryDeviceDisconnected,
       onDiscoveryDeviceRejected: _onDiscoveryDeviceRejected,
-      onDiscoveryConnectionRequestReceived:
-          _onDiscoveryConnectionRequestReceived,
+      onDiscoveryConnectionRequestReceived: _onDiscoveryConnectionRequestReceived,
       onPermissionRequired: _onPermissionRequired,
       onUwbSessionStarted: _onUwbSessionStarted,
       onUwbSessionDisconnected: _onUwbSessionDisconnected,
@@ -164,8 +156,7 @@ class Uwb extends UwbPlatform {
 
   @override
   Future<void> stopDiscovery() async {
-    _discoveredDevices
-        .removeWhere((key, value) => value.state != DeviceState.connected);
+    _discoveredDevices.removeWhere((key, value) => value.state != DeviceState.connected);
     _discoveredDevicesStream.add(_discoveredDevices.values);
     return await _hostApi.stopDiscovery();
   }
@@ -248,9 +239,7 @@ class Uwb extends UwbPlatform {
 
     // Available: Apple API
     Direction3D? direction;
-    if (jsonData['directionX'] != null &&
-        jsonData['directionY'] != null &&
-        jsonData['directionZ'] != null) {
+    if (jsonData['directionX'] != null && jsonData['directionY'] != null && jsonData['directionZ'] != null) {
       direction = Direction3D(
         x: jsonData['directionX'],
         y: jsonData['directionY'],

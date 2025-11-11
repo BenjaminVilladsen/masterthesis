@@ -52,7 +52,7 @@ class MultipeerConnectivityManager: NSObject, MCSessionDelegate, MCNearbyService
         self.localPeerId = localPeerId
         self.localMCPeer = MCPeerID(displayName: localPeerId)
         self.identityString = identity
-        self.mcSession = MCSession(peer: localMCPeer, securityIdentity: nil, encryptionPreference: .required)
+        self.mcSession = MCSession(peer: localMCPeer, securityIdentity: nil, encryptionPreference: .optional)
         
         // Init Adveritiser
         self.mcAdvertiser = MCNearbyServiceAdvertiser(
@@ -172,7 +172,7 @@ class MultipeerConnectivityManager: NSObject, MCSessionDelegate, MCNearbyService
             debugLogHandler?("[MPC] Peer \(peerId) not found for invitation.")
             return
         }
-        mcBrowser.invitePeer(peer, to: mcSession, withContext: nil, timeout: 20)
+        mcBrowser.invitePeer(peer, to: mcSession, withContext: nil, timeout: 10)
     }
     
     public func handleInvitation(peerId: String, accept: Bool) throws {

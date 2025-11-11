@@ -35,6 +35,7 @@ public class UwbPlugin: NSObject, FlutterPlugin, UwbHostApi, NISessionDelegate {
     private let logger = os.Logger(subsystem: "uwb_plugin", category: "UwbPlugin")
     
     private var pendingInvitations : [String] = []
+    private var incomingInvitations: [String] = []
     
     override init() {
         super.init()
@@ -251,6 +252,13 @@ public class UwbPlugin: NSObject, FlutterPlugin, UwbHostApi, NISessionDelegate {
     }
     
     private func connectWithPhone(device: UwbDevice) {
+        // Do not send an invitation if we have already received one from this peer.
+        guard !incomingInvitations.contains(device.id) else {
+            logger.log("Ignoring outgoing invitation to \(device.id), as an incoming one already exists.")
+            sendDebugLog("[APP] Ignoring outgoing invitation to \(device.id), as an incoming one already exists.")
+            return
+        }
+        
         if !pendingInvitations.contains(device.id) {
             self.pendingInvitations.append(device.id)
         }
@@ -370,6 +378,7 @@ public class UwbPlugin: NSObject, FlutterPlugin, UwbHostApi, NISessionDelegate {
     }
     
     private func mpcPeerInvited(peerId: String) {
+        incomingInvitations.append(peerId)
         DispatchQueue.main.async {
             UwbPlugin.flutterApi?.onHostDiscoveryConnectionRequestReceived(
                 device: UwbDevice(
@@ -411,6 +420,9 @@ public class UwbPlugin: NSObject, FlutterPlugin, UwbHostApi, NISessionDelegate {
         if let index = pendingInvitations.firstIndex(of: peerId) {
             pendingInvitations.remove(at: index)
         }
+        if let index = incomingInvitations.firstIndex(of: peerId) {
+            incomingInvitations.remove(at: index)
+        }
         self.shareDiscoveryTokenWithPhone(peerId: peerId, token: myToken)
         
         DispatchQueue.main.async {
@@ -451,6 +463,10 @@ public class UwbPlugin: NSObject, FlutterPlugin, UwbHostApi, NISessionDelegate {
                 if (isDiscovering) {
                     self.mpcManager?.restartDiscovery()
                 }
+            }
+            
+            if let index = incomingInvitations.firstIndex(of: peerId) {
+                incomingInvitations.remove(at: index)
             }
             
             DispatchQueue.main.async {
